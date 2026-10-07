@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BenhSQL: a self-hosted SQL runner</title>
+    <meta name="description"
+        content="BenhSQL is a self-hosted SQL runner for MySQL, PostgreSQL and SQLite with AI chat, charts and an ER diagram. One Node process, no build step.">
+    <link rel="icon" href="assets/favicon/favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="assets/favicon/favicon.ico" sizes="48x48">
+    <link rel="icon" href="assets/favicon/favicon-32x32.png" type="image/png" sizes="32x32">
+    <link rel="icon" href="assets/favicon/favicon-16x16.png" type="image/png" sizes="16x16">
+    <link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
+    <link rel="manifest" href="site.webmanifest">
+    <meta name="theme-color" content="#0a0a09">
+    <link rel="stylesheet" href="app.css">
+
+</head>
+
+<body>
+    <div class="app">
+
+        <!-- ============ TOP BAR ============ -->
+        <div class="topbar">
+
+            <div class="brand">
+                <img src="src" alt="" class="logo" id="logoBench">
+            </div>
+            <div class="connection-select-wrap">
+                <select class="connection-select" id="connectionSelect"></select>
+            </div>
+            <div class="topbar-spacer"></div>
+
+            <div class="theme-select-wrap">
+                <span class="theme-icon" id="themeIcon"></span>
+                <select class="theme-select" id="themeSelect" title="Color theme">
+                    <option value="light">Light</option>
+                    <option value="dark">Dark</option>
+                    <option value="system">System</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- ============ WORKSPACE ============ -->
+        <div class="workspace">
+
+            <!-- ---------- LEFT: connections & schema ---------- -->
+            <aside class="sidebar-left" id="sidebarLeft">
+                <div class="panel-title">
+                    <span class="panel-title-text">Connections</span>
+                    <span class="panel-toggle" id="toggleLeftSidebar" title="Collapse"></span>
+                </div>
+                <div class="sidebar-search">
+                    <span class="sidebar-search-icon"><svg class="icon" width="12" height="12" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="7" />
+                            <path d="m21 21-4.3-4.3" />
+                        </svg></span>
+                    <input type="text" id="connectionSearchInput" class="sidebar-search-input"
+                        placeholder="Search connections…">
+                </div>
+                <div class="tree-scroll" id="connectionTree"></div>
+                <div class="connections-rail" id="connectionsRail"></div>
+                <div class="sidebar-footer">
+                    <button class="btn" id="openConnModal2"><svg class="icon" width="13" height="13" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round">
+                            <path d="M12 5v14" />
+                            <path d="M5 12h14" />
+                        </svg>Add connection</button>
+                </div>
+            </aside>
+
+            <!-- ---------- MIDDLE: workbench ---------- -->
+            <main class="main">
+
+                <div class="tabbar" id="tabbar"></div>
+
+                <div class="toolbar">
+                    <div class="target" id="tabTarget" title="Change target connection / database">
+                        <span class="icon" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M12 22v-5" />
+                                <path d="M9 8V2" />
+                                <path d="M15 8V2" />
+                                <path d="M18 8v3a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z" />
+                            </svg></span><b id="tabTargetLabel">No tab open</b>
+                        <button class="btn btn-sm btn-ghost" id="openErdBtn" title="View ER diagram for this database"
+                            style="margin-left:8px;"><svg class="icon" width="13" height="13" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <rect x="3" y="3" width="7" height="7" rx="1" />
+                                <rect x="14" y="3" width="7" height="7" rx="1" />
+                                <rect x="14" y="14" width="7" height="7" rx="1" />
+                                <rect x="3" y="14" width="7" height="7" rx="1" />
+                                <path d="M10 6.5h4" />
+                                <path d="M17.5 10v4" />
+                                <path d="M10 17.5h4" />
+                            </svg>Diagram</button>
+                    </div>
+                    <div class="toolbar-spacer"></div>
+                    <input type="file" id="openFileInput" accept=".sql,.txt" style="display:none">
+                    <button class="btn btn-sm btn-ghost" id="openFileBtn" title="Open .sql (Ctrl+O)"><svg class="icon"
+                            width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path
+                                d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h4l2 3h8a2 2 0 0 1 2 2v2" />
+                        </svg>Open .sql</button>
+                    <button class="btn btn-sm btn-ghost" id="saveFileBtn"
+                        title="Save (Ctrl+S) · Save As (Ctrl+Shift+S)"><svg class="icon" width="13" height="13"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" />
+                            <path d="M17 21v-8H7v8" />
+                            <path d="M7 3v5h8" />
+                        </svg><span id="saveFileLabel">Save .sql</span></button>
+                    <span style="width:1px; height:18px; background:var(--border); margin:0 2px;"></span>
+                    <button class="btn btn-sm btn-ghost" id="formatBtn"><svg class="icon" width="13" height="13"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 6H3" />
+                            <path d="M15 12H3" />
+                            <path d="M17 18H3" />
+                        </svg>Format</button>
+                    <button class="btn btn-sm btn-ghost" id="clearBtn"><svg class="icon" width="13" height="13"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path
+                                d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21" />
+                            <path d="M22 21H7" />
+                            <path d="m5 11 9 9" />
+                        </svg>Clear</button>
+                    <span class="kbd-hint"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> to run</span>
+                    <button class="btn btn-primary" id="runBtn"><svg class="icon" width="13" height="13"
+                            viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                            <polygon points="6 3 20 12 6 21 6 3" />
+                        </svg>Run query</button>
+                </div>
+
+                <div class="editor-shell" id="editorShell">
+                    <div class="gutter" id="gutter">
+                        <div>1</div>
+                    </div>
+                    <div class="code-area">
+                        <pre class="code-highlight" id="highlightLayer" aria-hidden="true"></pre>
+                        <textarea class="code-input" id="codeInput" spellcheck="false" autocapitalize="off"
+                            autocomplete="off"></textarea>
+                        <div class="autocomplete-popup" id="autocompletePopup" style="display:none;"></div>
+                        <div class="selection-panel" id="selectionPanel" style="display:none;">
+                            <div class="selection-panel-head">
+                                <span class="selection-panel-title">Edit selected code</span>
+                                <span class="selection-panel-close" id="selectionPanelClose" title="Close (Esc)"><svg
+                                        class="icon" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <path d="M18 6 6 18" />
+                                        <path d="m6 6 12 12" />
+                                    </svg></span>
+                            </div>
+                            <textarea class="selection-panel-input" id="selectionPanelInput" rows="2"
+                                placeholder="Edit selected code…"></textarea>
+                            <div class="selection-panel-result" id="selectionPanelResult" style="display:none;"></div>
+                            <div class="selection-panel-foot">
+                                <span class="selection-panel-hint">Enter to run · Shift+Enter for a new line</span>
+                                <div class="selection-mode-wrap" id="selectionModeWrap">
+                                    <button type="button" class="selection-mode-trigger" id="selectionModeTrigger">
+                                        <span id="selectionModeLabel">Edit Selection</span>
+                                        <svg class="icon" width="11" height="11" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <polyline points="6 9 12 15 18 9" />
+                                        </svg>
+                                    </button>
+                                    <div class="selection-mode-menu" id="selectionModeMenu" style="display:none;">
+                                        <div class="selection-mode-item" data-mode="edit"><span>Edit
+                                                Selection</span><svg class="icon selection-mode-check" width="12"
+                                                height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <polyline points="20 6 9 17 4 12" />
+                                            </svg></div>
+                                        <div class="selection-mode-item" data-mode="ask"><span>Quick Question</span><svg
+                                                class="icon selection-mode-check" width="12" height="12"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                stroke-linecap="round" stroke-linejoin="round">
+                                                <polyline points="20 6 9 17 4 12" />
+                                            </svg></div>
+                                        <div class="selection-mode-item" data-mode="chat"><span>Send to Chat</span><svg
+                                                class="icon selection-mode-check" width="12" height="12"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                stroke-linecap="round" stroke-linejoin="round">
+                                                <polyline points="20 6 9 17 4 12" />
+                                            </svg></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="convert-fab-wrap" id="convertFabWrap">
+                            <button type="button" class="convert-fab" id="convertFabBtn"
+                                title="Convert query to another language">
+                                <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <polyline points="16 18 22 12 16 6" />
+                                    <polyline points="8 6 2 12 8 18" />
+                                </svg>
+                            </button>
+                            <div class="convert-fab-menu" id="convertFabMenu" style="display:none;"></div>
+                        </div>
+                        <div class="find-bar editor-find-bar" id="editorFindBar" style="display:none;">
+                            <span class="find-bar-icon"><svg class="icon" width="12" height="12" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <circle cx="11" cy="11" r="7" />
+                                    <path d="m21 21-4.3-4.3" />
+                                </svg></span>
+                            <input type="text" id="editorFindInput" class="find-bar-input" placeholder="Find in query">
+                            <span class="find-bar-count" id="editorFindCount">0/0</span>
+                            <button type="button" class="find-bar-btn" id="editorFindPrev"
+                                title="Previous match (Shift+Enter)"><svg class="icon" width="12" height="12"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="18 15 12 9 6 15" />
+                                </svg></button>
+                            <button type="button" class="find-bar-btn" id="editorFindNext"
+                                title="Next match (Enter)"><svg class="icon" width="12" height="12" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <polyline points="6 9 12 15 18 9" />
+                                </svg></button>
+                            <span class="find-bar-btn" id="editorFindClose" title="Close (Esc)"><svg class="icon"
+                                    width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M18 6 6 18" />
+                                    <path d="m6 6 12 12" />
+                                </svg></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="resize-handle" id="resizeHandle" title="Drag to resize"><span class="resize-grip"></span>
+                </div>
+
+                <div class="results-panel">
+                    <div class="results-toolbar">
+                        <div class="view-toggle">
+                            <div class="view-btn is-active" data-view="table" id="viewTableBtn"><svg class="icon"
+                                    width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                                    <path d="M3 9h18" />
+                                    <path d="M3 15h18" />
+                                    <path d="M12 3v18" />
+                                </svg>Table</div>
+                            <div class="view-btn" data-view="json" id="viewJsonBtn"><svg class="icon" width="12"
+                                    height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M8 3H7a2 2 0 0 0-2 2v3a2 2 0 0 1-2 2 2 2 0 0 1 2 2v3a2 2 0 0 0 2 2h1" />
+                                    <path d="M16 3h1a2 2 0 0 1 2 2v3a2 2 0 0 0 2 2 2 2 0 0 0-2 2v3a2 2 0 0 1-2 2h-1" />
+                                </svg>JSON</div>
+                            <div class="view-btn" data-view="chart" id="viewChartBtn"><svg class="icon" width="12"
+                                    height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M3 3v18h18" />
+                                    <path d="M18 17V9" />
+                                    <path d="M13 17V5" />
+                                    <path d="M8 17v-3" />
+                                </svg>Chart</div>
+                        </div>
+                        <div class="status-pill" id="statusPill"><span class="sw"></span><span id="statusText">Not run
+                                yet</span></div>
+                        <div class="toolbar-spacer"></div>
+                        <button class="btn btn-sm" id="copyResultBtn" disabled><svg class="icon" width="13" height="13"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="8" y="8" width="13" height="13" rx="2" />
+                                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+                            </svg><span id="copyResultLabel">Copy CSV</span></button>
+                        <button class="btn btn-sm" id="exportCsv" disabled><svg class="icon" width="13" height="13"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 15V3" />
+                                <path d="m7 10 5 5 5-5" />
+                                <path d="M20 21H4" />
+                            </svg>Export CSV</button>
+                        <button class="btn btn-sm" id="exportJson" disabled><svg class="icon" width="13" height="13"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 15V3" />
+                                <path d="m7 10 5 5 5-5" />
+                                <path d="M20 21H4" />
+                            </svg>Export JSON</button>
+                    </div>
+                    <div class="result-sub-tabs" id="resultSubTabs" style="display:none;"></div>
+                    <div class="find-bar results-find-bar" id="resultsFindBar" style="display:none;">
+                        <span class="find-bar-icon"><svg class="icon" width="12" height="12" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="7" />
+                                <path d="m21 21-4.3-4.3" />
+                            </svg></span>
+                        <input type="text" id="resultsFindInput" class="find-bar-input" placeholder="Find in results">
+                        <span class="find-bar-count" id="resultsFindCount"></span>
+                        <span class="find-bar-btn" id="resultsFindClose" title="Close (Esc)"><svg class="icon"
+                                width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M18 6 6 18" />
+                                <path d="m6 6 12 12" />
+                            </svg></span>
+                    </div>
+                    <div class="chart-config-bar" id="chartConfigBar" style="display:none;">
+                        <div class="chart-config-field">
+                            <label>Type</label>
+                            <select id="chartTypeSelect">
+                                <option value="bar">Bar</option>
+                                <option value="line">Line</option>
+                                <option value="pie">Pie</option>
+                                <option value="doughnut">Doughnut</option>
+                                <option value="scatter">Scatter</option>
+                            </select>
+                        </div>
+                        <div class="chart-config-field">
+                            <label>X axis</label>
+                            <select id="chartXSelect"></select>
+                        </div>
+                        <div class="chart-config-field chart-config-field-grow">
+                            <label>Y axis <span class="chart-config-hint">(ctrl/cmd-click for more than
+                                    one)</span></label>
+                            <select id="chartYSelect" multiple></select>
+                        </div>
+                    </div>
+                    <div class="results-body" id="resultsBody"></div>
+                </div>
+            </main>
+
+            <!-- ---------- RIGHT: session (chat + history) ---------- -->
+            <aside class="sidebar-right" id="sidebarRight" data-session-tab="chat">
+                <div class="panel-title">
+                    <span class="panel-title-text-group">
+                        <span class="panel-toggle" id="toggleRightSidebar" title="Collapse"></span>
+                        <span class="session-tabs" id="sessionTabs">
+                            <button type="button" class="session-tab is-active" data-session-tab="chat">Chat</button>
+                            <button type="button" class="session-tab" data-session-tab="history">History</button>
+                        </span>
+                    </span>
+                    <span class="history-toolbar" id="historyToolbar">
+                        <span style="color:var(--text-low); font-weight:400;" id="historyCount">0 runs</span>
+                        <span class="history-clear-all" id="clearAllHistory" title="Delete all history"><svg
+                                class="icon" width="11" height="11" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 6h18" />
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                                <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                <path d="M10 11v6" />
+                                <path d="M14 11v6" />
+                            </svg>Clear all</span>
+                    </span>
+                </div>
+                <div class="session-pane" id="sessionPaneChat">
+                    <div class="chat-pane-toolbar" id="chatPaneToolbar" style="display:none;">
+                        <span class="chat-pane-back" id="chatPaneBack" title="Back to chat history">
+                            <svg class="icon" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="15 18 9 12 15 6" />
+                            </svg>
+                        </span>
+                        <span class="chat-pane-title" id="chatPaneTitle"></span>
+                        <span class="chat-pane-spacer"></span>
+                        <button type="button" class="btn btn-sm btn-ghost" id="chatNewBtn">
+                            <svg class="icon" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 5v14" />
+                                <path d="M5 12h14" />
+                            </svg>New chat
+                        </button>
+                    </div>
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="chat-empty">
+                            <div class="chat-empty-icon"><svg class="icon" width="22" height="22" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="m12 3 1.7 4.3L18 9l-4.3 1.7L12 15l-1.7-4.3L6 9l4.3-1.7Z" />
+                                    <path d="M5 16l.8 2.2L8 19l-2.2.8L5 22l-.8-2.2L2 19l2.2-.8Z" />
+                                    <path d="M19 13l.6 1.6L21.2 15l-1.6.6L19 17.2l-.6-1.6L16.8 15l1.6-.6Z" />
+                                </svg></div>
+                            <div class="chat-empty-title">Agent chat</div>
+                            <div class="chat-empty-copy">Ask about this query, schema, or results.</div>
+                        </div>
+                    </div>
+                    <div class="chat-model-bar">
+                        <div class="chat-model-select-wrap">
+                            <span class="chat-model-icon" id="chatModelIcon"></span>
+                            <select class="chat-model-select" id="chatModelSelect" title="AI model">
+                                <optgroup label="Cloud">
+                                    <option value="claude-sonnet">Claude Sonnet</option>
+                                    <option value="claude-opus">Claude Opus</option>
+                                    <option value="claude-haiku">Claude Haiku</option>
+                                    <option value="gpt-4o">GPT-4o</option>
+                                    <option value="gpt-4o-mini">GPT-4o mini</option>
+                                    <option value="grok">Grok</option>
+                                </optgroup>
+                                <optgroup label="Local (node-llama-cpp)" id="localModelGroup"></optgroup>
+                                <optgroup label="Custom endpoint" id="customEndpointGroup"></optgroup>
+                            </select>
+                        </div>
+                        <span class="chat-model-hint" id="chatModelHint">Preview only, not connected</span>
+                        <span class="panel-toggle" id="openAiSettings" title="AI provider API keys">
+                            <svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="3" />
+                                <path
+                                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" />
+                            </svg>
+                        </span>
+                        <input type="file" id="localModelFileInput" accept=".gguf,.bin" style="display:none">
+                    </div>
+                    <div class="chat-context-bar" id="chatContextBar">
+                        <span class="chat-context-icon"><svg class="icon" width="12" height="12" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path
+                                    d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h4l2 3h8a2 2 0 0 1 2 2v2" />
+                            </svg></span>
+                        <span class="chat-context-label" id="chatContextLabel">No query tab open, nothing
+                            attached</span>
+                    </div>
+                    <form class="chat-composer" id="chatComposer">
+                        <textarea id="chatInput" rows="1" placeholder="Ask the agent…"></textarea>
+                        <button type="submit" class="btn btn-primary btn-sm" id="chatSend" title="Send">
+                            <svg class="icon" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="m22 2-7 20-4-9-9-4Z" />
+                                <path d="M22 2 11 13" />
+                            </svg>
+                        </button>
+                    </form>
+                </div>
+                <div class="session-pane" id="sessionPaneHistory">
+                    <div class="sidebar-search">
+                        <span class="sidebar-search-icon"><svg class="icon" width="12" height="12" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="7" />
+                                <path d="m21 21-4.3-4.3" />
+                            </svg></span>
+                        <input type="text" id="historySearchInput" class="sidebar-search-input"
+                            placeholder="Search history…">
+                    </div>
+                    <div class="history-scroll" id="historyList"></div>
+                </div>
+                <div class="session-rail" id="sessionRail">
+                    <div class="rail-item is-active" data-session-tab="chat" title="Open chat">Chat</div>
+                    <div class="rail-item" data-session-tab="history" title="Open session history">History</div>
+                </div>
+            </aside>
+
+        </div>
+    </div>
+
+    <!-- ============ NEW CONNECTION MODAL ============ -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <div class="modal-head">
+                New connection
+                <span class="x" id="closeModal"><svg class="icon" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
+                    </svg></span>
+            </div>
+            <div class="modal-body">
+                <div class="field">
+                    <label>Database type</label>
+                    <div class="type-picker">
+                        <div class="type-option selected" data-type="mysql"><span class="swatch"
+                                style="background:var(--mysql)"></span>MySQL</div>
+                        <div class="type-option" data-type="postgres"><span class="swatch"
+                                style="background:var(--postgres)"></span>PostgreSQL</div>
+                        <div class="type-option" data-type="sqlite"><span class="swatch"
+                                style="background:var(--sqlite)"></span>SQLite</div>
+                    </div>
+                </div>
+                <div class="field">
+                    <label>Connection name</label>
+                    <input type="text" id="newConnName" placeholder="e.g. staging-mysql">
+                </div>
+                <div id="networkFields">
+                    <div class="field-row">
+                        <div class="field">
+                            <label>Host</label>
+                            <input type="text" id="newConnHost" placeholder="127.0.0.1">
+                        </div>
+                        <div class="field" style="max-width:100px;">
+                            <label>Port</label>
+                            <input type="text" id="newConnPort" placeholder="3306">
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <div class="field">
+                            <label>Username</label>
+                            <input type="text" id="newConnUser" placeholder="root">
+                        </div>
+                        <div class="field">
+                            <label>Password</label>
+                            <input type="password" id="newConnPass" placeholder="••••••••">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label>Default database (optional)</label>
+                        <input type="text" id="newConnDb" placeholder="e.g. wgcentralsupply">
+                        <div style="font-size:11px; color:var(--text-low); margin-top:4px;">Postgres needs this to list
+                            other databases (usually "postgres"). Optional for MySQL.</div>
+                    </div>
+                </div>
+                <div class="field" id="sqliteField" style="display:none;">
+                    <label>Database file</label>
+                    <input type="file" id="newConnSqliteInput" accept=".sqlite,.sqlite3,.db" style="display:none;">
+                    <button type="button" class="btn" id="newConnSqliteBtn" style="width:100%; justify-content:center;">
+                        <svg class="icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="17 8 12 3 7 8" />
+                            <line x1="12" y1="3" x2="12" y2="15" />
+                        </svg>
+                        <span id="newConnSqliteLabel">Choose a .sqlite / .db file…</span>
+                    </button>
+                    <div style="font-size:11px; color:var(--text-low); margin-top:4px;">Uploaded to the server so it can
+                        be queried directly. The file itself never touches your browser's storage.</div>
+                </div>
+                <div id="modalMessage" style="display:none; font-size:12px; padding:8px 10px; border-radius:6px;"></div>
+            </div>
+            <div class="modal-foot">
+                <button class="btn btn-ghost" id="testConn"><svg class="icon" width="13" height="13" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M12 22v-5" />
+                        <path d="M9 8V2" />
+                        <path d="M15 8V2" />
+                        <path d="M18 8v3a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z" />
+                    </svg>Test</button>
+                <div class="topbar-spacer"></div>
+                <button class="btn btn-ghost" id="cancelModal">Cancel</button>
+                <button class="btn btn-primary" id="saveConn"><svg class="icon" width="13" height="13"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" />
+                        <path d="M17 21v-8H7v8" />
+                        <path d="M7 3v5h8" />
+                    </svg>Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ AI PROVIDER KEYS MODAL ============ -->
+    <div class="modal-overlay" id="aiSettingsOverlay">
+        <div class="modal">
+            <div class="modal-head">
+                AI provider keys
+                <span class="x" id="closeAiSettings"><svg class="icon" width="15" height="15" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
+                    </svg></span>
+            </div>
+            <div class="modal-body" id="aiSettingsBody">
+                <!-- one row per provider, rendered by JS -->
+            </div>
+            <div class="modal-foot">
+                <button class="btn btn-ghost" id="closeAiSettings2">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ CONVERT QUERY MODAL ============ -->
+    <div class="modal-overlay" id="conversionOverlay">
+        <div class="modal modal-wide">
+            <div class="modal-head">
+                Convert query
+                <span class="x" id="closeConversion"><svg class="icon" width="15" height="15" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
+                    </svg></span>
+            </div>
+            <div class="conversion-tabs" id="conversionTabs"></div>
+            <div class="modal-body conversion-body">
+                <pre class="conversion-code" id="conversionCode"></pre>
+            </div>
+            <div class="modal-foot">
+                <span class="conversion-foot-hint" id="conversionHint"></span>
+                <span class="conversion-foot-spacer"></span>
+                <button class="btn btn-ghost" id="conversionCopyBtn"><svg class="icon" width="13" height="13"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" />
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                    </svg>Copy</button>
+                <button class="btn btn-ghost" id="conversionExportBtn"><svg class="icon" width="13" height="13"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>Export</button>
+                <button class="btn btn-ghost" id="closeConversion2">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ ER DIAGRAM MODAL ============ -->
+    <div class="modal-overlay" id="erdOverlay">
+        <div class="modal modal-fullscreen">
+            <div class="modal-head">
+                <span id="erdTitle">ER diagram</span>
+                <span class="x" id="closeErd"><svg class="icon" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
+                    </svg></span>
+            </div>
+            <div class="erd-toolbar">
+                <button type="button" class="btn btn-sm btn-ghost" id="erdZoomOut" title="Zoom out">−</button>
+                <span class="erd-zoom-label" id="erdZoomLabel">100%</span>
+                <button type="button" class="btn btn-sm btn-ghost" id="erdZoomIn" title="Zoom in">+</button>
+                <button type="button" class="btn btn-sm btn-ghost" id="erdFit" title="Reset pan and zoom">Fit</button>
+                <span class="erd-toolbar-spacer"></span>
+                <span class="erd-status" id="erdStatus"></span>
+            </div>
+            <div class="erd-viewport" id="erdViewport">
+                <div class="erd-world" id="erdWorld">
+                    <svg class="erd-lines" id="erdLines"></svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="vendor/chart.umd.min.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>

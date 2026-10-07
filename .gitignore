@@ -1,0 +1,14 @@
+node_modules/
+.env
+public/old/*.html
+data/models/*.gguf
+data/*.sqlite
+data/*.sqlite-shm
+data/*.sqlite-wal
+data/*.sqlite-journal
+*.log
+data/models/
+data/sqlite-dbs/
+data/sqlite-dbs/*
+*.db
+*.db3
