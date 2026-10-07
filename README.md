@@ -141,7 +141,7 @@ A single statement returns its rows and timing. Several statements return `{ "st
 
 ## Documentation and website
 
-A static landing page and full documentation live in [`site/`](site/index.html). Open `site/index.html` in a browser, or host the folder anywhere.
+A static landing page and full documentation live in [`docs/`](https://felconca.github.io/benhSQL/index.html). Open `docs/index.html` in a browser, or host the folder anywhere.
 
 ## Known limitations (contributions welcome)
 
