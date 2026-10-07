@@ -1,6 +1,6 @@
 {
-  "name": "BenhSQL",
-  "short_name": "BenhSQL",
+  "name": "Query Bench",
+  "short_name": "Query Bench",
   "description": "A self-hosted SQL runner for MySQL, PostgreSQL and SQLite.",
   "start_url": "./index.html",
   "scope": "./",
