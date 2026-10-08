@@ -40,5 +40,5 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Query Bench running at http://localhost:${PORT}`);
+  console.log(`BenhSQL running at http://localhost:${PORT}`);
 });

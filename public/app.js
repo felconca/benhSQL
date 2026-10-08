@@ -3902,7 +3902,7 @@ function buildQueryContextMessage() {
   if (!tab || !tab.query || !tab.query.trim()) return null;
   const conn = findConn(tab.connId);
   let content =
-    `You are helping the user inside Query Bench, a SQL query editor. ` +
+    `You are helping the user inside BenhSQL, a SQL query editor. ` +
     `Current tab: "${tab.title}". ` +
     `Target: ${conn ? `${conn.name} (${conn.type})` : "no connection selected"} / ${tab.dbName || "no database selected"}. ` +
     `Current SQL in the editor:\n\`\`\`sql\n${tab.query}\n\`\`\``;

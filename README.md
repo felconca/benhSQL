@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="public/assets/logo/logo-white.svg">
-    <img src="public/assets/logo/logo-black.svg" alt="Query Bench" height="72">
+    <img src="public/assets/logo/logo-black.svg" alt="BenhSQL" height="72">
   </picture>
 </p>
 
@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <img src="public/assets/preview.png" alt="Query Bench in light and dark theme" width="100%">
+  <img src="public/assets/preview.png" alt="BenhSQL in light and dark theme" width="100%">
 </p>
 
 ## Features
@@ -90,7 +90,7 @@ Open the AI settings to add a cloud API key, or pick a model from the model pick
 
 - **Cloud:** add a key for Anthropic, OpenAI or xAI.
 - **Custom endpoint:** any server that speaks the OpenAI chat API. For llama.cpp, start `llama-server -m your-model.gguf --port 8082` and use `http://localhost:8082/v1` as the base URL.
-- **Local model:** upload a `.gguf` file in the model settings. It is stored under `data/models` and runs inside the Query Bench process.
+- **Local model:** upload a `.gguf` file in the model settings. It is stored under `data/models` and runs inside the BenhSQL process.
 
 ## Keyboard shortcuts
 
